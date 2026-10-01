@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+report.json
+README.md.backup
+*.pyc
+agentforge-lambda.zip

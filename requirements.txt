@@ -1,0 +1,5 @@
+# AgentForge dependencies
+# Core pipeline uses the Python standard library.
+
+rich==13.7.1
+boto3
