@@ -2,9 +2,8 @@
 code_generator.py
 Step 4 of the AgentForge pipeline.
 
-Generates a Python code template based on the task type and keywords.
-No LLM or external API is used — this is a rule-based template generator.
-In a future phase, this will be replaced by an Amazon Bedrock call.
+Generates Python code based on the task type and keywords.
+No LLM or external API is used — this is a rule-based generator.
 """
 
 import keyword
@@ -12,49 +11,129 @@ import keyword
 
 def _safe_identifier(raw: str, fallback: str) -> str:
     """
-    Return `raw` if it is a valid Python identifier and not a reserved keyword.
-    Otherwise return `fallback`.
-
-    Args:
-        raw:      Candidate identifier string.
-        fallback: Safe name to use when raw is invalid.
-
-    Returns:
-        A safe Python identifier string.
+    Return raw if it is a valid Python identifier and not a keyword.
+    Otherwise return fallback.
     """
     if raw and raw.isidentifier() and not keyword.iskeyword(raw):
         return raw
+
     return fallback
+
+
+def _build_calculator_template() -> str:
+    """
+    Generate a complete calculator application with unit tests.
+    """
+
+    return '''\
+def add(a, b):
+    """Return the sum of two numbers."""
+    return a + b
+
+
+def subtract(a, b):
+    """Return the difference between two numbers."""
+    return a - b
+
+
+def multiply(a, b):
+    """Return the product of two numbers."""
+    return a * b
+
+
+def divide(a, b):
+    """Return the quotient of two numbers."""
+    if b == 0:
+        raise ValueError("Cannot divide by zero.")
+
+    return a / b
+
+
+def calculate(a, b, operation):
+    """
+    Perform a calculator operation.
+
+    Supported operations:
+        add
+        subtract
+        multiply
+        divide
+    """
+
+    if operation == "add":
+        return add(a, b)
+
+    if operation == "subtract":
+        return subtract(a, b)
+
+    if operation == "multiply":
+        return multiply(a, b)
+
+    if operation == "divide":
+        return divide(a, b)
+
+    raise ValueError("Unsupported operation.")
+
+
+def run_tests():
+    """Run basic unit tests for the calculator."""
+
+    assert add(2, 3) == 5
+    assert subtract(5, 3) == 2
+    assert multiply(4, 3) == 12
+    assert divide(10, 2) == 5
+
+    try:
+        divide(10, 0)
+        raise AssertionError("Division by zero should raise ValueError.")
+    except ValueError:
+        pass
+
+    assert calculate(2, 3, "add") == 5
+    assert calculate(5, 3, "subtract") == 2
+    assert calculate(4, 3, "multiply") == 12
+    assert calculate(10, 2, "divide") == 5
+
+    print("All calculator tests passed.")
+
+
+if __name__ == "__main__":
+    print("2 + 3 =", add(2, 3))
+    print("5 - 3 =", subtract(5, 3))
+    print("4 * 3 =", multiply(4, 3))
+    print("10 / 2 =", divide(10, 2))
+
+    run_tests()
+'''
 
 
 def _build_function_template(keywords: list) -> str:
     """Generate a Python function template."""
-    raw = keywords[0].replace("-", "_") if keywords else ""
+
+    raw = str(keywords[0]).replace("-", "_") if keywords else ""
     func_name = _safe_identifier(raw, "solution")
 
     return f'''\
 def {func_name}(value):
     """
-    TODO: Implement the logic for '{func_name}'.
+    Process the supplied value.
 
     Args:
         value: The input to process.
 
     Returns:
-        The computed result.
+        The processed result.
     """
-    # Step 1: Validate input
+
     if value is None:
         raise ValueError("Input cannot be None.")
 
-    # Step 2: Core logic (replace this with your implementation)
-    result = value  # placeholder
+    result = value
 
     return result
 
 
 if __name__ == "__main__":
-    # Quick smoke test
     output = {func_name}("example_input")
     print("Output:", output)
 '''
@@ -62,22 +141,23 @@ if __name__ == "__main__":
 
 def _build_class_template(keywords: list) -> str:
     """Generate a Python class template."""
+
     raw = keywords[0].capitalize().replace("-", "") if keywords else ""
     class_name = _safe_identifier(raw, "Solution")
 
     return f'''\
 class {class_name}:
     """
-    TODO: Implement the {class_name} class.
+    Generated solution class.
     """
 
     def __init__(self, name: str):
-        """Initialize with a name."""
+        """Initialize the object."""
         self.name = name
 
     def process(self):
         """
-        TODO: Add the core processing logic here.
+        Process the stored name.
 
         Returns:
             A result string.
@@ -96,38 +176,39 @@ if __name__ == "__main__":
 
 def _build_script_template(keywords: list) -> str:
     """Generate a Python script template."""
+
     return '''\
 import sys
 
 
 def main():
-    """
-    TODO: Implement the main script logic here.
-    """
-    # Step 1: Read input (from args or a file)
+    """Main entry point for the generated script."""
+
     if len(sys.argv) > 1:
         input_data = sys.argv[1]
     else:
         input_data = "default_input"
 
-    # Step 2: Process the input
     result = process(input_data)
 
-    # Step 3: Output the result
     print("Result:", result)
 
 
 def process(data: str) -> str:
     """
-    TODO: Replace with actual processing logic.
+    Process input data.
 
     Args:
-        data: Input string to process.
+        data: Input string.
 
     Returns:
-        Processed result as a string.
+        Processed string.
     """
-    return data.strip().upper()  # placeholder transformation
+
+    if not isinstance(data, str):
+        raise ValueError("data must be a string")
+
+    return data.strip().upper()
 
 
 if __name__ == "__main__":
@@ -136,20 +217,24 @@ if __name__ == "__main__":
 
 
 def _build_general_template() -> str:
-    """Fallback template for unrecognized task types."""
+    """Generate a fallback template for unknown task types."""
+
     return '''\
 def solution(input_data):
     """
-    TODO: Implement your solution here.
+    General solution function.
 
     Args:
-        input_data: The input to your solution.
+        input_data: Input to the solution.
 
     Returns:
-        The output of your solution.
+        Result of the solution.
     """
-    # Write your logic here
-    result = None  # placeholder
+
+    if input_data is None:
+        raise ValueError("input_data cannot be None")
+
+    result = input_data
 
     return result
 
@@ -159,8 +244,9 @@ if __name__ == "__main__":
 '''
 
 
-# Map task types to their builder functions
+# Map task types to their builder functions.
 TEMPLATE_BUILDERS = {
+    "calculator": lambda keywords: _build_calculator_template(),
     "function": _build_function_template,
     "class": _build_class_template,
     "script": _build_script_template,
@@ -169,21 +255,28 @@ TEMPLATE_BUILDERS = {
 
 def generate_code(analyzed_task: dict) -> dict:
     """
-    Generate a Python code template based on the analyzed task.
+    Generate Python code based on the analyzed task.
 
     Args:
-        analyzed_task: The dict returned by task_analyzer.analyze_task().
+        analyzed_task:
+            Dictionary returned by analyze_task().
 
     Returns:
-        A dict with keys: task_type, code (string), language.
+        Dictionary containing task_type, language, code, and keywords.
     """
+
+    if not isinstance(analyzed_task, dict):
+        raise TypeError("analyzed_task must be a dictionary")
+
     task_type = analyzed_task.get("task_type", "general")
     keywords = analyzed_task.get("keywords", [])
 
+    if not isinstance(keywords, list):
+        keywords = list(keywords) if keywords else []
+
     builder = TEMPLATE_BUILDERS.get(task_type)
 
-    if builder:
-        # class template doesn't need keywords the same way, but we pass them anyway
+    if builder is not None:
         code = builder(keywords)
     else:
         code = _build_general_template()
@@ -192,4 +285,5 @@ def generate_code(analyzed_task: dict) -> dict:
         "task_type": task_type,
         "language": "python",
         "code": code,
+        "keywords": keywords,
     }
