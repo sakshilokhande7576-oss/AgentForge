@@ -341,3 +341,14 @@ AWS deployment is being kept separate until the required services, permissions, 
 ## License
 
 This project is created as a personal portfolio and learning project.
+
+
+## Current AWS Deployment
+
+- AWS Lambda: AgentForge — Active
+- API Gateway: AgentForgeAPI — Deployed
+- API endpoint: POST /tasks — Working
+- Amazon S3: agentforge-reports — Working
+- End-to-end API Gateway ? Lambda ? S3 test — Successful
+- Automated tests: 49/49 Passed
+
